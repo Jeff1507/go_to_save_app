@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_to_save_app/core/http/resolve_media_url.dart';
 
 class UserAvatar extends StatelessWidget {
   final String? avatarUrl;
@@ -19,13 +20,15 @@ class UserAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (avatarUrl == null || avatarUrl!.isEmpty) {
+    final resolvedUrl = resolveMediaUrl(avatarUrl);
+
+    if (resolvedUrl == null || resolvedUrl.isEmpty) {
       return _buildFallback(context);
     }
 
     return ClipOval(
       child: Image.network(
-        avatarUrl!,
+        resolvedUrl,
         width: size,
         height: size,
         fit: BoxFit.cover,

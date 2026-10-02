@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:go_to_save_app/core/http/api_exception.dart';
-import 'package:go_to_save_app/core/http/resolve_media_url.dart';
 import 'package:go_to_save_app/features/auth/providers/logout_all_provider.dart';
 import 'package:go_to_save_app/features/auth/providers/logout_provider.dart';
 import 'package:go_to_save_app/features/profile/providers/remove_avatar_provider.dart';
 import 'package:go_to_save_app/features/profile/providers/require_current_user_provider.dart';
 import 'package:go_to_save_app/features/profile/providers/upload_avatar_provider.dart';
 import 'package:go_to_save_app/features/profile/widgets/avatar_options_sheet.dart';
+import 'package:go_to_save_app/features/profile/widgets/settings_menu_group.dart';
 import 'package:go_to_save_app/shared/widgets/confirmation_dialog.dart';
 import 'package:go_to_save_app/shared/widgets/toast.dart';
 import 'package:go_to_save_app/shared/widgets/user_avatar.dart';
@@ -181,7 +181,7 @@ class ProfileScreen extends ConsumerWidget {
 
                   Stack(
                     children: [
-                      UserAvatar(resolveMediaUrl(user.avatarUrl)),
+                      UserAvatar(user.avatarUrl),
                       Positioned(
                         bottom: -2,
                         right: -2,
@@ -275,73 +275,6 @@ class ProfileScreen extends ConsumerWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-class SettingsMenuGroup extends StatelessWidget {
-  final List<SettingsMenuItem> items;
-
-  const SettingsMenuGroup({super.key, required this.items});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    return Material(
-      borderRadius: BorderRadius.circular(25),
-      color: colorScheme.surfaceContainer,
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        children: [
-          for (int i = 0; i < items.length; i++) ...[
-            items[i],
-            if (i != items.length - 1)
-              Divider(height: 1, color: colorScheme.surface),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-class SettingsMenuItem extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String? subtitle;
-  final Color? color;
-  final Widget trailing;
-  final VoidCallback onTap;
-
-  const SettingsMenuItem({
-    super.key,
-    required this.icon,
-    required this.title,
-    this.subtitle,
-    this.color,
-    this.trailing = const Icon(Icons.arrow_forward_ios, size: 16),
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    return ListTile(
-      leading: Icon(icon, color: color),
-      title: Text(title, style: TextStyle(color: color)),
-      subtitle: subtitle != null
-          ? Text(
-              subtitle!,
-              style: theme.textTheme.labelMedium?.copyWith(
-                color: colorScheme.secondary,
-              ),
-            )
-          : null,
-      trailing: trailing,
-      onTap: onTap,
     );
   }
 }

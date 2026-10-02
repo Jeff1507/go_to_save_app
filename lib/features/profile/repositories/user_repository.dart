@@ -12,13 +12,13 @@ class UserRepository {
         'avatar': await MultipartFile.fromFile(avatarPath),
       });
 
-      await _api.put('/customers/me/avatar', data: formData);
+      await _api.put('/me/avatar', data: formData);
     });
   }
 
   Future<void> removeAvatar() {
     return runApiCall(() async {
-      await _api.delete('/customers/me/avatar');
+      await _api.delete('/me/avatar');
     });
   }
 
@@ -28,7 +28,7 @@ class UserRepository {
   }) {
     return runApiCall(() async {
       await _api.patch(
-        '/customers/me',
+        '/me',
         data: {'firstName': firstName, 'lastName': lastName},
       );
     });
@@ -36,7 +36,19 @@ class UserRepository {
 
   Future<void> updateEmail(String email) {
     return runApiCall(() async {
-      await _api.patch('/customers/me/email', data: {'email': email});
+      await _api.patch('/me/email', data: {'email': email});
+    });
+  }
+
+  Future<void> requestEmailVerification(String email) {
+    return runApiCall(() async {
+      await _api.post('/email-verification', data: {'email': email});
+    });
+  }
+
+  Future<void> verifyEmail({required String email, required String code}) {
+    return runApiCall(() async {
+      await _api.patch('/verify-email', data: {'email': email, 'code': code});
     });
   }
 
@@ -46,7 +58,7 @@ class UserRepository {
   }) {
     return runApiCall(() async {
       await _api.patch(
-        '/customers/me/password',
+        '/me/password',
         data: {'password': password, 'newPassword': newPassword},
       );
     });
