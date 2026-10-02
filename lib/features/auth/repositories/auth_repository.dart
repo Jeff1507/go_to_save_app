@@ -1,7 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:go_to_save_app/core/http/api_runner.dart';
 import 'package:go_to_save_app/core/storage/session_storage.dart';
-import 'package:go_to_save_app/features/auth/models/session_model.dart';
+import 'package:go_to_save_app/features/auth/models/session.dart';
 
 class AuthRepository {
   final Dio _api;
@@ -9,7 +9,7 @@ class AuthRepository {
 
   AuthRepository(this._api, this._sessionStorage);
 
-  Future<SessionModel> signup({
+  Future<Session> signup({
     required String firstName,
     required String lastName,
     required String email,
@@ -17,7 +17,7 @@ class AuthRepository {
   }) {
     return runApiCall(() async {
       final response = await _api.post(
-        '/customers/signup',
+        '/signup',
         data: {
           'firstName': firstName,
           'lastName': lastName,
@@ -26,24 +26,21 @@ class AuthRepository {
         },
       );
 
-      final session = SessionModel.fromJson(response.data);
+      final session = Session.fromJson(response.data);
       await _sessionStorage.save(session.id);
 
       return session;
     });
   }
 
-  Future<SessionModel> login({
-    required String email,
-    required String password,
-  }) {
+  Future<Session> login({required String email, required String password}) {
     return runApiCall(() async {
       final response = await _api.post(
-        '/customers/login',
+        '/login',
         data: {'email': email, 'password': password},
       );
 
-      final session = SessionModel.fromJson(response.data);
+      final session = Session.fromJson(response.data);
       await _sessionStorage.save(session.id);
 
       return session;
@@ -52,34 +49,19 @@ class AuthRepository {
 
   Future<void> logout() {
     return runApiCall(() async {
-      await _api.post('/customers/logout');
+      await _api.post('/logout');
     });
   }
 
   Future<void> logoutAll() {
     return runApiCall(() async {
-      await _api.post('/customers/logout-all');
-    });
-  }
-
-  Future<void> requestEmailVerification(String email) {
-    return runApiCall(() async {
-      await _api.post('/customers/email-verification', data: {'email': email});
-    });
-  }
-
-  Future<void> verifyEmail({required String email, required String code}) {
-    return runApiCall(() async {
-      await _api.patch(
-        '/customers/verify-email',
-        data: {'email': email, 'code': code},
-      );
+      await _api.post('/logout-all');
     });
   }
 
   Future<void> requestPasswordReset(String email) {
     return runApiCall(() async {
-      await _api.post('/customers/password-reset', data: {'email': email});
+      await _api.post('/password-reset', data: {'email': email});
     });
   }
 
@@ -90,7 +72,7 @@ class AuthRepository {
   }) {
     return runApiCall(() async {
       await _api.patch(
-        '/customers/reset-password',
+        '/reset-password',
         data: {'email': email, 'code': code, 'newPassword': newPassword},
       );
     });

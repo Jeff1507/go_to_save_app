@@ -33,7 +33,7 @@ class AuthStateNotifier extends Notifier<AuthState> {
   Future<User> _getCurrentUser() {
     final api = ref.read(apiProvider);
     return runApiCall(() async {
-      final response = await api.get('/customers/me');
+      final response = await api.get('/me');
       return User.fromJson(response.data);
     });
   }

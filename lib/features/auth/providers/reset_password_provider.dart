@@ -1,8 +1,7 @@
-// lib/features/auth/providers/reset_password_provider.dart
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_to_save_app/features/auth/repositories/auth_repository_provider.dart';
+import 'package:go_to_save_app/features/auth/providers/auth_repository_provider.dart';
 
 class ResetPasswordNotifier extends AsyncNotifier<void> {
   @override

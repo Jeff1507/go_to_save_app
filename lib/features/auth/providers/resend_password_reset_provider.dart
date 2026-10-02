@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_to_save_app/features/auth/providers/resend_cooldown_notifier.dart';
-import 'package:go_to_save_app/features/auth/repositories/auth_repository_provider.dart';
+import 'package:go_to_save_app/shared/providers/resend_cooldown_notifier.dart';
+import 'package:go_to_save_app/features/auth/providers/auth_repository_provider.dart';
 
 class ResendPasswordResetNotifier extends ResendCooldownNotifier {
   late String _email;
