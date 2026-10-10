@@ -7,15 +7,21 @@ import 'package:go_to_save_app/features/auth/screens/login_screen.dart';
 import 'package:go_to_save_app/features/auth/screens/request_password_reset_screen.dart';
 import 'package:go_to_save_app/features/auth/screens/reset_password_screen.dart';
 import 'package:go_to_save_app/features/auth/screens/signup_screen.dart';
-import 'package:go_to_save_app/features/home/screens/home_screen.dart';
+import 'package:go_to_save_app/features/cart/models/cart_store_info.dart';
+import 'package:go_to_save_app/features/cart/screens/cart_screen.dart';
+import 'package:go_to_save_app/features/orders/screens/order_detail.dart';
+import 'package:go_to_save_app/features/orders/screens/order_list_screen.dart';
 import 'package:go_to_save_app/features/profile/screens/update_email_screen.dart';
 import 'package:go_to_save_app/features/profile/screens/update_password_screen.dart';
 import 'package:go_to_save_app/features/profile/screens/update_profile_screen.dart';
 import 'package:go_to_save_app/features/profile/screens/profile_screen.dart';
+import 'package:go_to_save_app/features/stores/screens/bag_detail_screen.dart';
+import 'package:go_to_save_app/features/stores/screens/home_screen.dart';
+import 'package:go_to_save_app/features/stores/screens/store_detail_screen.dart';
 import 'package:go_to_save_app/shared/widgets/app_navigation_shell.dart';
 import 'package:go_to_save_app/shared/screens/error_screen.dart';
 import 'package:go_to_save_app/shared/screens/splash_screen.dart';
-import 'package:go_to_save_app/features/auth/screens/verify_email_screen.dart';
+import 'package:go_to_save_app/features/profile/screens/verify_email_screen.dart';
 
 class AppRoutes {
   static const splash = '/splash';
@@ -29,10 +35,16 @@ class AppRoutes {
   static const search = '/search';
   static const orders = '/orders';
   static const profile = '/profile';
+
   static const updateProfile = '/update-profile';
   static const updateEmail = '/update-email';
   static const verifyEmail = '/verify-email';
   static const updatePassword = '/update-password';
+
+  static const storeDetail = '/stores/:id';
+  static const bagDetail = '/bags/:id';
+  static const cart = '/cart';
+  static const orderDetail = '/orders/:id';
 
   // Rotas que não exigem autenticação
   static const publicPaths = [signup, login, forgotPassword, resetPassword];
@@ -97,7 +109,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const RequestPasswordResetScreen(),
       ),
       GoRoute(
-        path: '/reset-password',
+        path: AppRoutes.resetPassword,
         builder: (context, state) {
           final email = state.extra as String?;
           if (email == null) {
@@ -124,6 +136,35 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: AppRoutes.updatePassword,
         builder: (context, state) => const UpdatePasswordScreen(),
       ),
+      GoRoute(
+        path: AppRoutes.storeDetail,
+        builder: (context, state) {
+          final storeId = state.pathParameters['id']!;
+          return StoreDetailScreen(storeId: storeId);
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.bagDetail,
+        builder: (context, state) {
+          final bagId = state.pathParameters['id']!;
+          final extra = state.extra as Map<String, CartStoreInfo>;
+          final store = extra['store']!;
+
+          return BagDetailScreen(bagId: bagId, store: store);
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.cart,
+        builder: (context, state) => const CartScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.orderDetail,
+        builder: (context, state) {
+          final orderId = state.pathParameters['id']!;
+
+          return OrderDetailScreen(orderId: orderId);
+        },
+      ),
 
       StatefulShellRoute.indexedStack(
         builder: (_, _, navigationShell) {
@@ -142,7 +183,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             routes: [
               GoRoute(
                 path: AppRoutes.search,
-                builder: (context, state) => const HomeScreen(),
+                builder: (context, state) => const SplashScreen(),
               ),
             ],
           ),
@@ -150,7 +191,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             routes: [
               GoRoute(
                 path: AppRoutes.orders,
-                builder: (context, state) => const HomeScreen(),
+                builder: (context, state) => const OrdersListScreen(),
               ),
             ],
           ),

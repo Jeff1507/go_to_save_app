@@ -152,12 +152,13 @@ ThemeData appTheme() {
     // Cards
     // ------------------------------------------------------------
     cardTheme: CardThemeData(
-      elevation: 0,
       color: palette.mantle,
       surfaceTintColor: Colors.transparent,
       margin: EdgeInsets.zero,
 
-      //shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      // shape: RoundedRectangleBorder(
+      //   borderRadius: BorderRadius.circular(16),
+      // ),
     ),
 
     // ------------------------------------------------------------
@@ -169,7 +170,7 @@ ThemeData appTheme() {
         backgroundColor: palette.crust,
         foregroundColor: palette.sky,
 
-        // padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
 
         textStyle: textTheme.labelLarge,
@@ -181,7 +182,7 @@ ThemeData appTheme() {
         backgroundColor: palette.sky,
         foregroundColor: palette.white,
 
-        //padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
 
         textStyle: textTheme.labelLarge,
@@ -193,7 +194,7 @@ ThemeData appTheme() {
         foregroundColor: palette.sky,
         side: BorderSide(color: palette.surface1),
 
-        //padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
 
         textStyle: textTheme.labelLarge,
@@ -214,7 +215,6 @@ ThemeData appTheme() {
       // filled: true,
       // fillColor: palette.crust,
 
-      //contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide: BorderSide.none,
@@ -314,7 +314,7 @@ ThemeData appTheme() {
 
       fillColor: WidgetStateProperty.resolveWith((states) {
         if (states.contains(WidgetState.selected)) {
-          return palette.mauve;
+          return palette.sky;
         }
 
         return palette.crust;
@@ -350,7 +350,7 @@ ThemeData appTheme() {
     // Progress indicators
     // ------------------------------------------------------------
     progressIndicatorTheme: ProgressIndicatorThemeData(
-      color: palette.mauve,
+      color: palette.sky,
       linearTrackColor: palette.crust,
       circularTrackColor: palette.crust,
     ),
@@ -369,7 +369,7 @@ ThemeData appTheme() {
 
       iconTheme: WidgetStateProperty.resolveWith((states) {
         if (states.contains(WidgetState.selected)) {
-          return IconThemeData(color: palette.mauve);
+          return IconThemeData(color: palette.text);
         }
 
         return IconThemeData(color: palette.subtext0);

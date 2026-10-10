@@ -1,0 +1,282 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:go_to_save_app/core/http/resolve_media_url.dart';
+import 'package:go_to_save_app/features/cart/models/cart_store_info.dart';
+import 'package:go_to_save_app/features/stores/models/store.dart';
+import 'package:go_to_save_app/features/stores/providers/get_store_provider.dart';
+import 'package:go_to_save_app/features/stores/utils/pickup_window_formatter.dart';
+import 'package:go_to_save_app/features/stores/widgets/bag_card.dart';
+import 'package:go_to_save_app/features/stores/utils/group_bags_by_pickup_window.dart';
+import 'package:go_to_save_app/shared/widgets/error_state_view.dart';
+import 'package:go_to_save_app/shared/widgets/expandable_text.dart';
+
+class StoreDetailScreen extends ConsumerWidget {
+  final String storeId;
+
+  const StoreDetailScreen({super.key, required this.storeId});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final storeAsync = ref.watch(getStoreProvider(storeId));
+
+    return Scaffold(
+      body: storeAsync.when(
+        data: (store) => _StoreDetailContent(store: store),
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (err, _) => Scaffold(
+          appBar: AppBar(),
+          body: ErrorStateView(
+            icon: Icons.error_outline,
+            message: 'Não foi possível carregar a loja.',
+            actionLabel: 'Tentar novamente',
+            onAction: () =>
+                ref.read(getStoreProvider(storeId).notifier).refresh(),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _StoreDetailContent extends StatefulWidget {
+  final Store store;
+
+  const _StoreDetailContent({required this.store});
+
+  @override
+  State<_StoreDetailContent> createState() => _StoreDetailContentState();
+}
+
+class _StoreDetailContentState extends State<_StoreDetailContent> {
+  final _scrollController = ScrollController();
+  bool _showTitle = false;
+
+  static const _expandedHeight = 200.0;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    final threshold = _expandedHeight - kToolbarHeight + 35;
+    final shouldShow = _scrollController.offset > threshold;
+
+    if (shouldShow != _showTitle) {
+      setState(() => _showTitle = shouldShow);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final store = widget.store;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final resolvedUrl = resolveMediaUrl(store.avatarUrl);
+    final groupedBags = groupBagsByPickupWindow(widget.store.bags);
+
+    return CustomScrollView(
+      controller: _scrollController,
+      slivers: [
+        SliverAppBar(
+          expandedHeight: _expandedHeight,
+          pinned: true,
+          backgroundColor: colorScheme.surface,
+          title: AnimatedOpacity(
+            opacity: _showTitle ? 1 : 0,
+            duration: const Duration(milliseconds: 200),
+            child: Text(widget.store.name),
+          ),
+          centerTitle: true,
+          flexibleSpace: FlexibleSpaceBar(
+            background: resolvedUrl != null
+                ? Image.network(
+                    resolvedUrl,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, _, _) =>
+                        Container(color: colorScheme.surfaceContainerHigh),
+                  )
+                : Container(color: colorScheme.surfaceContainerHigh),
+          ),
+        ),
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _StoreHeader(store: store),
+
+                const SizedBox(height: 20),
+
+                if (store.description != null) ...[
+                  ExpandableText(store.description ?? 'Sem descrição'),
+                  const SizedBox(height: 20),
+                ],
+
+                _StoreAddressCard(store: store),
+              ],
+            ),
+          ),
+        ),
+        SliverPadding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          sliver: SliverToBoxAdapter(
+            child: Text(
+              'Sacolas disponíveis',
+              style: theme.textTheme.titleMedium,
+            ),
+          ),
+        ),
+        if (groupedBags.isEmpty)
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 32),
+              child: Center(
+                child: Text(
+                  'Nenhuma sacola disponível no momento.',
+                  style: TextStyle(color: colorScheme.secondary),
+                ),
+              ),
+            ),
+          )
+        else
+          for (final entry in groupedBags.entries) ...[
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
+              sliver: SliverToBoxAdapter(
+                child: Row(
+                  children: [
+                    Icon(Icons.schedule_outlined, size: 16),
+                    const SizedBox(width: 6),
+                    Text(
+                      PickupWindowFormatter.formatPickupWindowLabel(entry.key),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            SliverPadding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              sliver: SliverList.separated(
+                itemCount: entry.value.length,
+                separatorBuilder: (_, _) => const SizedBox(height: 12),
+                itemBuilder: (context, index) {
+                  final bag = entry.value[index];
+
+                  return BagCard(
+                    bag: bag,
+                    onTap: () => context.push(
+                      '/bags/${bag.id}',
+                      extra: {
+                        'store': CartStoreInfo(
+                          id: store.id,
+                          name: store.name,
+                          avatarUrl: store.avatarUrl,
+                          address: store.address,
+                        ),
+                      },
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        const SliverToBoxAdapter(child: SizedBox(height: 24)),
+      ],
+    );
+  }
+}
+
+class _StoreHeader extends StatelessWidget {
+  final Store store;
+
+  const _StoreHeader({required this.store});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(store.name, style: theme.textTheme.headlineSmall),
+
+        const SizedBox(height: 6),
+
+        Row(
+          children: [
+            if (store.rating.hasRatings) ...[
+              Icon(Icons.star_rounded, size: 18, color: Colors.amber.shade600),
+
+              const SizedBox(width: 4),
+
+              Text(
+                store.rating.average.toString(),
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              Text(
+                ' (${store.rating.count} avaliações)',
+                style: TextStyle(color: colorScheme.inverseSurface),
+              ),
+            ] else
+              Text(
+                'Sem avaliações.',
+                style: TextStyle(
+                  color: colorScheme.secondary,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _StoreAddressCard extends StatelessWidget {
+  final Store store;
+
+  const _StoreAddressCard({required this.store});
+
+  Future<void> _openMap() async {
+    debugPrint('Abriu o mapa');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: ListTile(
+        contentPadding: const EdgeInsetsDirectional.fromSTEB(16, 16, 24, 16),
+        leading: Icon(
+          Icons.location_on_outlined,
+          color: colorScheme.inverseSurface,
+        ),
+        title: Text(
+          store.address.formatted,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        trailing: Icon(Icons.chevron_right),
+        onTap: _openMap,
+      ),
+    );
+  }
+}

@@ -4,7 +4,7 @@ import 'package:go_to_save_app/core/http/api_runner.dart';
 class UserRepository {
   final Dio _api;
 
-  UserRepository({required this._api});
+  UserRepository(this._api);
 
   Future<void> updateAvatar(String avatarPath) {
     return runApiCall(() async {

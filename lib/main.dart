@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_to_save_app/core/router/router_provider.dart';
 import 'package:go_to_save_app/core/theme/app_theme.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
-void main() {
+// TODO: Organizar melhor os arquivos
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await initializeDateFormatting('pt_BR');
   runApp(const ProviderScope(child: App()));
 }
 

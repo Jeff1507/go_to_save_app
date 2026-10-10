@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:go_to_save_app/features/cart/providers/cart_provider.dart';
 
 class AppNavigationShell extends StatelessWidget {
   final StatefulNavigationShell navigationShell;
@@ -10,6 +12,8 @@ class AppNavigationShell extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: navigationShell,
+      floatingActionButton: const _CartFab(),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       bottomNavigationBar: NavigationBar(
         selectedIndex: navigationShell.currentIndex,
         onDestinationSelected: (index) => navigationShell.goBranch(
@@ -38,6 +42,29 @@ class AppNavigationShell extends StatelessWidget {
             label: 'Perfil',
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _CartFab extends ConsumerWidget {
+  const _CartFab();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final count = ref.watch(cartProvider.select((c) => c.totalItemsCount));
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Badge(
+      label: Text('$count'),
+      isLabelVisible: count > 0,
+      offset: const Offset(0, 0),
+      child: FloatingActionButton(
+        onPressed: () => context.push('/cart'),
+        backgroundColor: colorScheme.primary,
+        foregroundColor: colorScheme.onPrimary,
+        shape: CircleBorder(),
+        child: const Icon(Icons.shopping_cart_outlined),
       ),
     );
   }
