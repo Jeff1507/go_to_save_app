@@ -204,30 +204,41 @@ class _StoreSearchCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      store.name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.titleMedium,
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            store.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.titleMedium,
+                          ),
+                        ),
+
+                        _RatingLabel(rating: store.rating),
+                      ],
                     ),
+
                     const SizedBox(height: 4),
+
                     Text(
                       '${store.address.street}, ${store.address.neighborhood}',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.bodySmall,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
+
                     const SizedBox(height: 6),
-                    _RatingLabel(rating: store.rating),
-                    if (description != null && description.isNotEmpty) ...[
-                      const SizedBox(height: 6),
+
+                    if (description != null && description.isNotEmpty)
                       Text(
                         description,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: theme.textTheme.bodySmall,
                       ),
-                    ],
                   ],
                 ),
               ),

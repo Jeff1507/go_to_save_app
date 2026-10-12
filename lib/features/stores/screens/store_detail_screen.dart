@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:go_to_save_app/core/http/resolve_media_url.dart';
 import 'package:go_to_save_app/features/cart/models/cart_store_info.dart';
 import 'package:go_to_save_app/features/stores/models/store.dart';
 import 'package:go_to_save_app/features/stores/providers/get_store_provider.dart';
@@ -10,7 +9,9 @@ import 'package:go_to_save_app/features/stores/utils/group_bags_by_pickup_window
 import 'package:go_to_save_app/shared/utils/format_currency_brl.dart';
 import 'package:go_to_save_app/shared/widgets/error_state_view.dart';
 import 'package:go_to_save_app/shared/widgets/expandable_text.dart';
+import 'package:go_to_save_app/shared/widgets/info_tile.dart';
 import 'package:go_to_save_app/shared/widgets/toast.dart';
+import 'package:go_to_save_app/shared/widgets/user_avatar.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class StoreDetailScreen extends ConsumerWidget {
@@ -54,7 +55,7 @@ class _StoreDetailContentState extends State<_StoreDetailContent> {
   final _scrollController = ScrollController();
   bool _showTitle = false;
 
-  static const _expandedHeight = 200.0;
+  static const _expandedHeight = 240.0;
 
   @override
   void initState() {
@@ -70,7 +71,7 @@ class _StoreDetailContentState extends State<_StoreDetailContent> {
   }
 
   void _onScroll() {
-    final threshold = _expandedHeight - kToolbarHeight + 35;
+    final threshold = _expandedHeight - kToolbarHeight;
     final shouldShow = _scrollController.offset > threshold;
 
     if (shouldShow != _showTitle) {
@@ -83,16 +84,14 @@ class _StoreDetailContentState extends State<_StoreDetailContent> {
     final store = widget.store;
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final resolvedUrl = resolveMediaUrl(store.avatarUrl);
     final groupedBags = groupBagsByPickupWindow(widget.store.bags);
 
     return CustomScrollView(
       controller: _scrollController,
       slivers: [
         SliverAppBar(
-          expandedHeight: _expandedHeight,
           pinned: true,
-          backgroundColor: colorScheme.surface,
+          expandedHeight: _expandedHeight,
           title: AnimatedOpacity(
             opacity: _showTitle ? 1 : 0,
             duration: const Duration(milliseconds: 200),
@@ -100,26 +99,18 @@ class _StoreDetailContentState extends State<_StoreDetailContent> {
           ),
           centerTitle: true,
           flexibleSpace: FlexibleSpaceBar(
-            background: resolvedUrl != null
-                ? Image.network(
-                    resolvedUrl,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, _, _) =>
-                        Container(color: colorScheme.surfaceContainerHigh),
-                  )
-                : Container(color: colorScheme.surfaceContainerHigh),
+            background: Container(
+              color: colorScheme.surfaceContainer,
+              child: SafeArea(child: _StoreHeader(store: store)),
+            ),
           ),
         ),
         SliverToBoxAdapter(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _StoreHeader(store: store),
-
-                const SizedBox(height: 20),
-
                 if (store.description != null) ...[
                   ExpandableText(store.description ?? 'Sem descrição'),
                   const SizedBox(height: 20),
@@ -130,6 +121,7 @@ class _StoreDetailContentState extends State<_StoreDetailContent> {
             ),
           ),
         ),
+
         SliverPadding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           sliver: SliverToBoxAdapter(
@@ -139,22 +131,21 @@ class _StoreDetailContentState extends State<_StoreDetailContent> {
             ),
           ),
         ),
+
         if (groupedBags.isEmpty)
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 32),
-              child: Center(
-                child: Text(
-                  'Nenhuma sacola disponível no momento.',
-                  style: TextStyle(color: colorScheme.secondary),
-                ),
+              padding: const EdgeInsets.all(16),
+              child: Text(
+                'Nenhuma sacola disponível no momento.',
+                style: TextStyle(color: colorScheme.secondary),
               ),
             ),
           )
         else
           for (final entry in groupedBags.entries) ...[
             SliverPadding(
-              padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
               sliver: SliverToBoxAdapter(
                 child: Row(
                   children: [
@@ -210,13 +201,19 @@ class _StoreHeader extends StatelessWidget {
     final colorScheme = theme.colorScheme;
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(store.name, style: theme.textTheme.headlineSmall),
+        SizedBox(height: kToolbarHeight),
+
+        UserAvatar(store.avatarUrl, size: 92),
+
+        const SizedBox(height: 12),
+
+        Text(store.name, style: theme.textTheme.titleMedium),
 
         const SizedBox(height: 6),
 
         Row(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             if (store.rating.hasRatings) ...[
               Icon(Icons.star_rounded, size: 18, color: Colors.amber.shade600),
@@ -231,7 +228,7 @@ class _StoreHeader extends StatelessWidget {
               ),
               Text(
                 ' (${store.rating.count} avaliações)',
-                style: TextStyle(color: colorScheme.inverseSurface),
+                style: theme.textTheme.bodyMedium,
               ),
             ] else
               Text(
@@ -273,25 +270,18 @@ class _StoreAddressCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
     return Card(
       clipBehavior: Clip.antiAlias,
-      child: ListTile(
-        contentPadding: const EdgeInsetsDirectional.fromSTEB(16, 16, 24, 16),
-        leading: Icon(
-          Icons.location_on_outlined,
-          color: colorScheme.inverseSurface,
-        ),
-        title: Text(
-          store.address.formatted,
-          style: theme.textTheme.bodyMedium?.copyWith(
-            fontWeight: FontWeight.w600,
+      child: InkWell(
+        onTap: () => _openMap(context),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: InfoTile(
+            icon: Icons.location_on_outlined,
+            label: 'Localização',
+            value: store.address.formatted,
           ),
         ),
-        trailing: Icon(Icons.chevron_right),
-        onTap: () => _openMap(context),
       ),
     );
   }
