@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 import 'package:go_to_save_app/core/geolocation/location_provider.dart';
+import 'package:go_to_save_app/core/geolocation/location_service.dart';
 import 'package:go_to_save_app/core/http/resolve_media_url.dart';
 import 'package:go_to_save_app/features/stores/models/rating.dart';
 import 'package:go_to_save_app/features/stores/models/store_summary.dart';
 import 'package:go_to_save_app/features/stores/providers/list_nearby_stores_provider.dart';
 import 'package:go_to_save_app/features/stores/providers/radius_filter_provider.dart';
-import 'package:go_to_save_app/features/stores/widgets/enable_location_prompt.dart';
-import 'package:go_to_save_app/features/stores/widgets/location_error_view.dart';
 import 'package:go_to_save_app/features/stores/widgets/radius_filter_sheet.dart';
 import 'package:go_to_save_app/shared/utils/format_currency_brl.dart';
 import 'package:go_to_save_app/shared/widgets/error_state_view.dart';
@@ -40,44 +40,155 @@ class HomeScreen extends ConsumerWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'Mais próximas de você',
-          style: theme.textTheme.titleMedium,
-        ),
-        actions: [
-          TextButton.icon(
-            icon: const Icon(Icons.filter_list_outlined),
-            label: Text('Filtro'),
-            onPressed: () => _openRadiusFilter(context, ref),
-          ),
-        ],
-      ),
-      body: Padding(
+    return SafeArea(
+      child: Padding(
         padding: const EdgeInsets.all(16),
         child: location.when(
           data: (position) {
             if (position == null) {
-              return EnableLocationPrompt(
+              return _EnableLocationPrompt(
                 onPressed: () => ref
                     .read(locationProvider.notifier)
                     .requestCurrentLocation(),
               );
             }
 
-            return const _StoresList();
+            return Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Mais próximas de você',
+                      style: theme.textTheme.titleMedium,
+                    ),
+                    GestureDetector(
+                      onTap: () => _openRadiusFilter(context, ref),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.filter_list_outlined,
+                            size: 18,
+                            color: colorScheme.primary,
+                          ),
+
+                          const SizedBox(width: 6),
+
+                          Text(
+                            'Filtro',
+                            style: theme.textTheme.labelLarge?.copyWith(
+                              color: colorScheme.primary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 16),
+
+                Expanded(child: _StoresList()),
+              ],
+            );
           },
           loading: () => Center(
             child: CircularProgressIndicator(color: colorScheme.primary),
           ),
-          error: (error, _) => LocationErrorView(
+          error: (error, _) => _LocationErrorView(
             error: error,
             onRetry: () =>
                 ref.read(locationProvider.notifier).requestCurrentLocation(),
           ),
         ),
       ),
+    );
+  }
+}
+
+class _EnableLocationPrompt extends StatelessWidget {
+  final VoidCallback onPressed;
+
+  const _EnableLocationPrompt({required this.onPressed});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.location_on_outlined,
+              size: 48,
+              color: colorScheme.primary,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Ative sua localização para ver sacolas perto de você',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.titleMedium,
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: onPressed,
+              child: const Text('Ativar localização'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _LocationErrorView extends StatelessWidget {
+  final Object error;
+  final VoidCallback onRetry;
+
+  const _LocationErrorView({required this.error, required this.onRetry});
+
+  IconData get _icon {
+    if (error is AppLocationServiceDisabledException) {
+      return Icons.location_off_outlined;
+    }
+    if (error is AppLocationPermissionDeniedException ||
+        error is AppLocationPermissionDeniedForeverException) {
+      return Icons.location_disabled_outlined;
+    }
+
+    return Icons.error_outlined;
+  }
+
+  String get _message {
+    if (error is AppLocationServiceDisabledException) {
+      return 'Ative a localização do seu aparelho para ver lojas próximas.';
+    }
+    if (error is AppLocationPermissionDeniedException) {
+      return 'Precisamos da sua localização para mostrar lojas próximas.';
+    }
+    if (error is AppLocationPermissionDeniedForeverException) {
+      return 'A permissão de localização foi negada. Ative-a nas configurações do app.';
+    }
+
+    return 'Não foi possível carregar as lojas próximas.';
+  }
+
+  bool get _isDeniedForever =>
+      error is AppLocationPermissionDeniedForeverException;
+
+  @override
+  Widget build(BuildContext context) {
+    return ErrorStateView(
+      icon: _icon,
+      message: _message,
+      actionLabel: _isDeniedForever
+          ? 'Abrir configurações'
+          : 'Tentar novamente',
+      onAction: _isDeniedForever ? () => Geolocator.openAppSettings() : onRetry,
     );
   }
 }
@@ -110,9 +221,13 @@ class _StoresList extends ConsumerWidget {
             physics: const AlwaysScrollableScrollPhysics(),
             itemCount: stores.length,
             itemBuilder: (context, index) {
-              return _StoreCard(
-                store: stores[index],
-                onTap: () => context.push('/stores/${stores[index].id}'),
+              return Column(
+                children: [
+                  _StoreCard(
+                    store: stores[index],
+                    onTap: () => context.push('/stores/${stores[index].id}'),
+                  ),
+                ],
               );
             },
           );
@@ -166,7 +281,7 @@ class _StoreCard extends StatelessWidget {
                   children: [
                     Text(
                       store.name,
-                      style: theme.textTheme.titleMedium,
+                      style: theme.textTheme.titleSmall,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -302,7 +417,7 @@ class _StoreAvatar extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final resolvedUrl = resolveMediaUrl(avatarUrl);
-    const double size = 72;
+    const double size = 64;
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(12),

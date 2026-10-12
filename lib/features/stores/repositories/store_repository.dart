@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:go_to_save_app/core/http/api_runner.dart';
 import 'package:go_to_save_app/features/stores/models/bag.dart';
 import 'package:go_to_save_app/features/stores/models/store.dart';
+import 'package:go_to_save_app/features/stores/models/store_search_result.dart';
 import 'package:go_to_save_app/features/stores/models/store_summary.dart';
 
 class StoreRepository {
@@ -41,6 +42,19 @@ class StoreRepository {
     return runApiCall(() async {
       final response = await _api.get('/bags/$id');
       return Bag.fromJson(response.data);
+    });
+  }
+
+  Future<List<StoreSearchResult>> searchStores(String name) {
+    return runApiCall(() async {
+      final response = await _api.get(
+        '/stores/search',
+        queryParameters: {'name': name},
+      );
+
+      return (response.data as List)
+          .map((e) => StoreSearchResult.fromJson(e as Map<String, dynamic>))
+          .toList();
     });
   }
 }

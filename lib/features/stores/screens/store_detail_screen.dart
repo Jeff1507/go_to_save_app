@@ -6,10 +6,12 @@ import 'package:go_to_save_app/features/cart/models/cart_store_info.dart';
 import 'package:go_to_save_app/features/stores/models/store.dart';
 import 'package:go_to_save_app/features/stores/providers/get_store_provider.dart';
 import 'package:go_to_save_app/features/stores/utils/pickup_window_formatter.dart';
-import 'package:go_to_save_app/features/stores/widgets/bag_card.dart';
 import 'package:go_to_save_app/features/stores/utils/group_bags_by_pickup_window.dart';
+import 'package:go_to_save_app/shared/utils/format_currency_brl.dart';
 import 'package:go_to_save_app/shared/widgets/error_state_view.dart';
 import 'package:go_to_save_app/shared/widgets/expandable_text.dart';
+import 'package:go_to_save_app/shared/widgets/toast.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class StoreDetailScreen extends ConsumerWidget {
   final String storeId;
@@ -173,7 +175,7 @@ class _StoreDetailContentState extends State<_StoreDetailContent> {
                 itemBuilder: (context, index) {
                   final bag = entry.value[index];
 
-                  return BagCard(
+                  return _BagCard(
                     bag: bag,
                     onTap: () => context.push(
                       '/bags/${bag.id}',
@@ -251,8 +253,22 @@ class _StoreAddressCard extends StatelessWidget {
 
   const _StoreAddressCard({required this.store});
 
-  Future<void> _openMap() async {
-    debugPrint('Abriu o mapa');
+  Future<void> _openMap(BuildContext context) async {
+    final address = store.address;
+
+    final uri = Uri.https('www.google.com', '/maps/search/', {
+      'api': '1',
+      'query': '${address.latitude},${address.longitude}',
+    });
+
+    var opened = false;
+    try {
+      opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } catch (_) {}
+
+    if (!opened && context.mounted) {
+      Toast.error(context, 'Não foi possível abrir o mapa.');
+    }
   }
 
   @override
@@ -275,7 +291,85 @@ class _StoreAddressCard extends StatelessWidget {
           ),
         ),
         trailing: Icon(Icons.chevron_right),
-        onTap: _openMap,
+        onTap: () => _openMap(context),
+      ),
+    );
+  }
+}
+
+class _BagCard extends StatelessWidget {
+  final BagSummary bag;
+  final VoidCallback? onTap;
+
+  const _BagCard({required this.bag, this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Card(
+      clipBehavior: Clip.hardEdge,
+      child: InkWell(
+        onTap: bag.isAvailable ? onTap : null,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(bag.title, style: theme.textTheme.titleMedium),
+
+              const SizedBox(height: 8),
+
+              Text(
+                bag.description ?? 'Sem descrição.',
+                style: theme.textTheme.bodySmall,
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
+              ),
+
+              const SizedBox(height: 20),
+
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    bag.isAvailable
+                        ? '${bag.stock} ${bag.stock == 1 ? 'restante' : 'restantes'}'
+                        : 'Esgotado',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: bag.isAvailable
+                          ? colorScheme.secondary
+                          : colorScheme.error,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
+                    children: [
+                      Text(
+                        formatCurrencyBrl(bag.originalPriceInBRL),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          decoration: TextDecoration.lineThrough,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+
+                      Text(
+                        formatCurrencyBrl(bag.finalPriceInBRL),
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          color: colorScheme.primary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

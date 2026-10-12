@@ -18,6 +18,7 @@ import 'package:go_to_save_app/features/profile/screens/profile_screen.dart';
 import 'package:go_to_save_app/features/stores/screens/bag_detail_screen.dart';
 import 'package:go_to_save_app/features/stores/screens/home_screen.dart';
 import 'package:go_to_save_app/features/stores/screens/store_detail_screen.dart';
+import 'package:go_to_save_app/features/stores/screens/store_search_screen.dart';
 import 'package:go_to_save_app/shared/widgets/app_navigation_shell.dart';
 import 'package:go_to_save_app/shared/screens/error_screen.dart';
 import 'package:go_to_save_app/shared/screens/splash_screen.dart';
@@ -183,7 +184,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             routes: [
               GoRoute(
                 path: AppRoutes.search,
-                builder: (context, state) => const SplashScreen(),
+                builder: (context, state) => const StoreSearchScreen(),
               ),
             ],
           ),

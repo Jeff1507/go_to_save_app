@@ -20,6 +20,7 @@ import 'package:go_to_save_app/shared/widgets/loading_button.dart';
 import 'package:go_to_save_app/shared/widgets/toast.dart';
 import 'package:go_to_save_app/shared/widgets/user_avatar.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class OrderDetailScreen extends ConsumerWidget {
   final String orderId;
@@ -496,8 +497,22 @@ class _StoreCard extends StatelessWidget {
 
   const _StoreCard({required this.store});
 
-  Future<void> _openMap() async {
-    debugPrint('Abriu o mapa');
+  Future<void> _openMap(BuildContext context) async {
+    final address = store.address;
+
+    final uri = Uri.https('www.google.com', '/maps/search/', {
+      'api': '1',
+      'query': '${address.latitude},${address.longitude}',
+    });
+
+    var opened = false;
+    try {
+      opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } catch (_) {}
+
+    if (!opened && context.mounted) {
+      Toast.error(context, 'Não foi possível abrir o mapa.');
+    }
   }
 
   @override
@@ -509,7 +524,7 @@ class _StoreCard extends StatelessWidget {
       color: colorScheme.surfaceContainer,
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: _openMap,
+        onTap: () => _openMap(context),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Row(
